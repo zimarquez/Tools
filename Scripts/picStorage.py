@@ -8,7 +8,7 @@ currentYear = datetime.now().year
 months = ["01-January","02-February","03-March","04-April",
           "05-May","06-June","07-July","08-August",
           "09-September","10-October","11-November","12-December"]
-imageTypes = (".jpg",".png")
+fileTypes = (".jpg",".jpeg",".png",".mp4")
 
 def CreateDirectories():
   print("~~Checking year directories~~")
@@ -31,7 +31,7 @@ def GetNewImages():
   listOfFiles = os.listdir(pwd)
   listOfImages = []
   for f in listOfFiles:
-    if f.endswith(imageTypes):
+    if f.endswith(fileTypes):
       listOfImages.append(f)
     
   return listOfImages
@@ -39,13 +39,15 @@ def GetNewImages():
 
 def GetDateDirectory(image):
   print("~~Getting destination directory~~")
-  
+
+  print("Using image: " + image) 
   date = re.search("\d\d\d\d\d\d\d\d", image)
   if date:
     date = date.group()
     year = date[0:4]
     month = date[4:6]
     day = date[6:8]
+    print(int(month))
     destination = ("/" + str(year) + "/" + months[int(month)-1])
     return destination
 
