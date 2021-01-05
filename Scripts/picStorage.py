@@ -8,11 +8,14 @@ currentYear = datetime.now().year
 months = ["01-January","02-February","03-March","04-April",
           "05-May","06-June","07-July","08-August",
           "09-September","10-October","11-November","12-December"]
-fileTypes = (".jpg",".jpeg",".png",".mp4")
+fileTypes = (".jpg",".jpeg",".png",".mp4", ".JPG")
+badFormatDirectory = "Unsupported Format"
+existingImageDirectory = "Copies"
 
 def CreateDirectories():
   print("~~Checking year directories~~")
 
+  # Create year directories
   for year in range (2000, currentYear+1):
     if os.path.isdir(str(year)):
       print("Directory " + str(year) + " already exists")
@@ -22,8 +25,22 @@ def CreateDirectories():
       for month in months:
         os.makedirs(str(year) + "/" + month)
 
-      # This line should work, but it doesn't.....
-      #os.chmod(str(pwd) + "/" + str(year), 0o666)
+  # Create directory for unsupported file formats
+  if os.path.isdir(badFormatDirectory):
+    print("Directory " + badFormatDirectory + " already exists")
+  else:
+    print("Creating directory " + badFormatDirectory)
+    os.makedirs(badFormatDirectory)
+
+  # Create directory for exisiting images
+  if os.path.isdir(existingImageDirectory):
+    print("Directory " + existingImageDirectory + " already exists")
+  else:
+    print("Creating directory " + existingImageDirectory)
+    os.makedirs(existingImageDirectory)
+
+  # This line should work, but it doesn't.....
+  #os.chmod(str(pwd) + "/" + str(year), 0o666)
 
 def GetNewImages():
   print("~~Making image list~~")
@@ -49,7 +66,7 @@ def GetDateDirectory(image):
     day = date[6:8]
     print(int(month))
     destination = ("/" + str(year) + "/" + months[int(month)-1])
-    return destination
+    #return destination
 
   date = re.search("\d\d\d\d-\d\d-\d\d", image)
   if date:
@@ -58,9 +75,14 @@ def GetDateDirectory(image):
     month = date[5:7]
     day = date[8:10]
     destination = ("/" + str(year) + "/" + months[int(month)-1])
-    return destination
+    #return destination
+  
+  # Move files with unsupported format to separate directory
   else:
-    print("ERROR: No valid date found")
+    destination = ("/" + badFormatDirectory)
+    print("WARNING: No valid date found")
+
+  return destination
 
   
 def MoveImages(listOfImages):
@@ -68,11 +90,19 @@ def MoveImages(listOfImages):
   
   for image in listOfImages:
     sourcePath = pwd + "/" + image
-    destinationPath = pwd + GetDateDirectory(image) + "/" + image;
+    destinationPath = pwd + GetDateDirectory(image) + "/" + image
+    badFormatPath = pwd + "/" + badFormatDirectory + "/" + image
+    existingImagePath = pwd + "/" + existingImageDirectory + "/" + image
+    
     #print("Old: ", sourcePath)
     #print("New: ", destinationPath)
-    if os.path.exists(destinationPath):
-      print("WARNING: " + image + " already exists. Skipping.")
+
+    if destinationPath == badFormatPath:
+      print("WARNING: the file '" + image + "' is not in a valid name format. Moving to 'Unsupported' directory")
+      os.rename(sourcePath, badFormatPath)
+    elif os.path.exists(destinationPath):
+      print("WARNING: the file '" + image + "' already exists. Moving to Copies directory.")
+      os.rename(sourcePath, existingImagePath)
     else:
       os.rename(sourcePath, destinationPath)
 
