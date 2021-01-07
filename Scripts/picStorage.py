@@ -68,7 +68,8 @@ def GetDateFromExif(imagePath):
       print(year)
       print(month)
       print(day)
-        
+      destination = ("/" + str(year) + "/" + months[int(month)-1])
+      return destination       
   
   return ("/testing")
 
