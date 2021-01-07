@@ -1,5 +1,7 @@
 import os
 import re
+from PIL import Image
+from PIL.ExifTags import TAGS
 from pathlib import Path
 from datetime import datetime
 
@@ -11,6 +13,7 @@ months = ["01-January","02-February","03-March","04-April",
 fileTypes = (".jpg",".jpeg",".png",".mp4", ".JPG")
 badFormatDirectory = "Unsupported Format"
 existingImageDirectory = "Copies"
+dateTimeOriginalID = 36867
 
 def CreateDirectories():
   print("~~Checking year directories~~")
@@ -53,6 +56,21 @@ def GetNewImages():
     
   return listOfImages
 
+def GetDateFromExif(imagePath):
+  image = Image.open(imagePath)
+  for dataID, dataValue in image._getexif().items():
+    #print(TAGS[tag])
+    if dataID == dateTimeOriginalID:
+      print(dataValue)
+      year = dataValue[0:4]
+      month = dataValue[5:7]
+      day = dataValue[8:10]
+      print(year)
+      print(month)
+      print(day)
+        
+  
+  return ("/testing")
 
 def GetDateDirectory(image):
   print("~~Getting destination directory~~")
@@ -66,7 +84,7 @@ def GetDateDirectory(image):
     day = date[6:8]
     print(int(month))
     destination = ("/" + str(year) + "/" + months[int(month)-1])
-    #return destination
+    return destination
 
   date = re.search("\d\d\d\d-\d\d-\d\d", image)
   if date:
@@ -75,12 +93,14 @@ def GetDateDirectory(image):
     month = date[5:7]
     day = date[8:10]
     destination = ("/" + str(year) + "/" + months[int(month)-1])
-    #return destination
-  
+    return destination
+
   # Move files with unsupported format to separate directory
   else:
+    GetDateFromExif(image)
     destination = ("/" + badFormatDirectory)
     print("WARNING: No valid date found")
+    return 0
 
   return destination
 
@@ -90,7 +110,14 @@ def MoveImages(listOfImages):
   
   for image in listOfImages:
     sourcePath = pwd + "/" + image
-    destinationPath = pwd + GetDateDirectory(image) + "/" + image
+    dateDirectory = GetDateDirectory(image)
+    if dateDirectory:
+      destinationPath = pwd + dateDirectory + "/" + image
+    else:
+      print("It's sorta working :D")
+      dateDirectory = GetDateFromExif(sourcePath)
+      destinationPath = pwd + dateDirectory + "/" + image
+    
     badFormatPath = pwd + "/" + badFormatDirectory + "/" + image
     existingImagePath = pwd + "/" + existingImageDirectory + "/" + image
     
@@ -99,12 +126,13 @@ def MoveImages(listOfImages):
 
     if destinationPath == badFormatPath:
       print("WARNING: the file '" + image + "' is not in a valid name format. Moving to 'Unsupported' directory")
-      os.rename(sourcePath, badFormatPath)
+      #os.rename(sourcePath, badFormatPath)
     elif os.path.exists(destinationPath):
       print("WARNING: the file '" + image + "' already exists. Moving to Copies directory.")
-      os.rename(sourcePath, existingImagePath)
+      #os.rename(sourcePath, existingImagePath)
     else:
-      os.rename(sourcePath, destinationPath)
+      print("bruh")
+      #os.rename(sourcePath, destinationPath)
 
 def main():
   CreateDirectories()

@@ -16,3 +16,6 @@ Current Features:
 
 Planned Features:
 - Read image exif data for those without date in file names
+
+Notes:
+- The script prioritizes storage based on dates in filename rather than file metadata. The argument for this is that the dates in filenames are likely more accurate. If the file is a screenshot of an older image, the metadata will have origin date as the screenshot date and not the original image's date. Additionally, if a file has a date in the name it is likely accurate because who would deliberately assign an incorrect date in a file's name? I mean what kind of person does that? So with that in mind, dates in filenames are prioritized given the assumption that the file naming/dating was done reasonably.
