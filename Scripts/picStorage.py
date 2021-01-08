@@ -13,6 +13,7 @@ months = ["01-January","02-February","03-March","04-April",
 fileTypes = (".jpg",".jpeg",".png",".mp4", ".JPG")
 badFormatDirectory = "Unsupported Format"
 existingImageDirectory = "Copies"
+unknownDateDirectory = "Unknown Date"
 dateTimeOriginalID = 36867
 
 def CreateDirectories():
@@ -21,7 +22,8 @@ def CreateDirectories():
   # Create year directories
   for year in range (2000, currentYear+1):
     if os.path.isdir(str(year)):
-      print("Directory " + str(year) + " already exists")
+      i = 0
+      #print("Directory " + str(year) + " already exists")
     else:
       print("Creating directory " + str(year))
       os.makedirs(str(year))
@@ -42,6 +44,13 @@ def CreateDirectories():
     print("Creating directory " + existingImageDirectory)
     os.makedirs(existingImageDirectory)
 
+  # Create directory for files needing manual organization
+  if os.path.isdir(unknownDateDirectory):
+    print("Directory " + unknownDateDirectory + " already exists")
+  else:
+    print("Creating directory " + unknownDateDirectory)
+    os.makedirs(unknownDateDirectory)
+
   # This line should work, but it doesn't.....
   #os.chmod(str(pwd) + "/" + str(year), 0o666)
 
@@ -56,10 +65,20 @@ def GetNewImages():
     
   return listOfImages
 
-def GetDateFromExif(imagePath):
-  if imagePath.endswith((".jpg",".JPG", ".jpeg")):
-    print("Valid jpg image")
-    image = Image.open(imagePath)
+def IncrementImageName(image, number):
+  newImageName = ""
+  for x in image:
+    if x == '.':
+      newImageName = newImageName + "(" + str(number) + ")"
+    newImageName = newImageName + x
+  
+  return newImageName
+
+# extracts file origin date from exif data
+def GetJPGDate(imageName):
+  imagePath = pwd + "/" + imageName
+  image = Image.open(imagePath)
+  if image._getexif() != None:
     for dataID, dataValue in image._getexif().items():
       #print(TAGS[dataValue])
       if dataID == dateTimeOriginalID:
@@ -67,20 +86,31 @@ def GetDateFromExif(imagePath):
         year = dataValue[0:4]
         month = dataValue[5:7]
         day = dataValue[8:10]
-        print(year)
-        print(month)
-        print(day)
         destination = ("/" + str(year) + "/" + months[int(month)-1])
         return destination
   else:
-    print("Invalid image type")
-    return ("/testing")
+    print("The file: " + imagePath + " does not contain exif data")
+    return -1
 
-def GetDateDirectory(image):
+def GetDateFromFileData(image):
+  imagePath = pwd + "/" + image
+  if imagePath.endswith((".jpg",".JPG",".jpeg")):
+    print("Valid jpg image")
+    destinationPath = GetJPGDate(image)
+  #elif imagePath.endswith((".jpg",".JPG",".jpeg")):
+  #elif imagePath.endswith((".jpg",".JPG",".jpeg")):
+  #elif imagePath.endswith((".jpg",".JPG",".jpeg")):
+  else:
+    print("Invalid image type")
+    return -1
+  
+  return destinationPath
+
+def GetDateFromFileName(imageName):
   print("~~Getting destination directory~~")
 
-  print("Using image: " + image) 
-  date = re.search("\d\d\d\d\d\d\d\d", image)
+  print("Using image: " + imageName) 
+  date = re.search("\d\d\d\d\d\d\d\d", imageName)
   if date:
     date = date.group()
     year = date[0:4]
@@ -90,7 +120,7 @@ def GetDateDirectory(image):
     destination = ("/" + str(year) + "/" + months[int(month)-1])
     return destination
 
-  date = re.search("\d\d\d\d-\d\d-\d\d", image)
+  date = re.search("\d\d\d\d-\d\d-\d\d", imageName)
   if date:
     date = date.group()
     year = date[0:4]
@@ -101,10 +131,10 @@ def GetDateDirectory(image):
 
   # Move files with unsupported format to separate directory
   else:
-    GetDateFromExif(image)
+    #GetDateFromExif(imageName)
     destination = ("/" + badFormatDirectory)
     print("WARNING: No valid date found")
-    return 0
+    return -1
 
   return destination
 
@@ -114,12 +144,18 @@ def MoveImages(listOfImages):
   
   for image in listOfImages:
     sourcePath = pwd + "/" + image
-    dateDirectory = GetDateDirectory(image)
-    if dateDirectory:
+
+    # Extract date from file name
+    dateDirectory = GetDateFromFileName(image)
+    if dateDirectory != -1:
       destinationPath = pwd + dateDirectory + "/" + image
+    # Extract date from file data
     else:
       print("It's sorta working :D")
-      dateDirectory = GetDateFromExif(sourcePath)
+      dateDirectory = GetDateFromFileData(image)
+      if dateDirectory == -1:
+        print("The file '" + image + "' could not be organized. Moving to '" + unknownDateDirectory + "' directory")
+        dateDirectory = "/" + unknownDateDirectory
       destinationPath = pwd + dateDirectory + "/" + image
     
     badFormatPath = pwd + "/" + badFormatDirectory + "/" + image
@@ -132,8 +168,13 @@ def MoveImages(listOfImages):
       print("WARNING: the file '" + image + "' is not in a valid name format. Moving to 'Unsupported' directory")
       #os.rename(sourcePath, badFormatPath)
     elif os.path.exists(destinationPath):
-      print("WARNING: the file '" + image + "' already exists. Moving to Copies directory.")
-      #os.rename(sourcePath, existingImagePath)
+      print("WARNING: the file '" + image + "' already exists in " + str(destinationPath) + ". Moving to Copies directory.")
+      i = 1
+      while os.path.exists(existingImagePath):
+        newImageName = IncrementImageName(image, i)
+        existingImagePath = pwd + "/" + existingImageDirectory + "/" + newImageName
+        i += 1
+      os.rename(sourcePath, existingImagePath)
     else:
       print("bruh")
       os.rename(sourcePath, destinationPath)
