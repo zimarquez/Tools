@@ -57,21 +57,24 @@ def GetNewImages():
   return listOfImages
 
 def GetDateFromExif(imagePath):
-  image = Image.open(imagePath)
-  for dataID, dataValue in image._getexif().items():
-    #print(TAGS[tag])
-    if dataID == dateTimeOriginalID:
-      print(dataValue)
-      year = dataValue[0:4]
-      month = dataValue[5:7]
-      day = dataValue[8:10]
-      print(year)
-      print(month)
-      print(day)
-      destination = ("/" + str(year) + "/" + months[int(month)-1])
-      return destination       
-  
-  return ("/testing")
+  if imagePath.endswith((".jpg",".JPG", ".jpeg")):
+    print("Valid jpg image")
+    image = Image.open(imagePath)
+    for dataID, dataValue in image._getexif().items():
+      #print(TAGS[dataValue])
+      if dataID == dateTimeOriginalID:
+        print(dataValue)
+        year = dataValue[0:4]
+        month = dataValue[5:7]
+        day = dataValue[8:10]
+        print(year)
+        print(month)
+        print(day)
+        destination = ("/" + str(year) + "/" + months[int(month)-1])
+        return destination
+  else:
+    print("Invalid image type")
+    return ("/testing")
 
 def GetDateDirectory(image):
   print("~~Getting destination directory~~")
@@ -133,7 +136,7 @@ def MoveImages(listOfImages):
       #os.rename(sourcePath, existingImagePath)
     else:
       print("bruh")
-      #os.rename(sourcePath, destinationPath)
+      os.rename(sourcePath, destinationPath)
 
 def main():
   CreateDirectories()
