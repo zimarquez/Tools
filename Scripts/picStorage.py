@@ -1,5 +1,6 @@
 import os
 import re
+import exiftool
 from PIL import Image
 from PIL.ExifTags import TAGS
 from pathlib import Path
@@ -10,7 +11,7 @@ currentYear = datetime.now().year
 months = ["01-January","02-February","03-March","04-April",
           "05-May","06-June","07-July","08-August",
           "09-September","10-October","11-November","12-December"]
-fileTypes = (".jpg",".jpeg",".png",".mp4", ".JPG")
+fileTypes = (".jpg",".jpeg",".png",".mp4",".JPG",".MOV")
 badFormatDirectory = "Unsupported Format"
 existingImageDirectory = "Copies"
 unknownDateDirectory = "Unknown Date"
@@ -92,14 +93,31 @@ def GetJPGDate(imageName):
     print("The file: " + imagePath + " does not contain exif data")
     return -1
 
-def GetDateFromFileData(image):
-  imagePath = pwd + "/" + image
-  if imagePath.endswith((".jpg",".JPG",".jpeg")):
-    print("Valid jpg image")
-    destinationPath = GetJPGDate(image)
-  #elif imagePath.endswith((".jpg",".JPG",".jpeg")):
-  #elif imagePath.endswith((".jpg",".JPG",".jpeg")):
-  #elif imagePath.endswith((".jpg",".JPG",".jpeg")):
+def GetMP4Date(fileName):
+  print("Foo")
+  
+# FileModifyDate
+# CreateDate
+def GetExifData(fileName):
+  sourcePath = pwd + "/" + fileName
+  tag = "CreateDate"
+  with exiftool.ExifTool() as et:
+    #metadata = et.execute("-time:all " + str(sourcePath))
+    metadata = et.get_metadata(sourcePath)
+    specificTag = et.get_tag(tag, sourcePath)
+  print(tag + ": " + specificTag)
+
+def GetDateFromFileData(currentFile):
+  filePath = pwd + "/" + currentFile
+  if filePath.endswith((".jpg",".JPG",".jpeg")):
+    print("Valid jpg file")
+    destinationPath = GetJPGDate(currentFile)
+  elif filePath.endswith((".mp4", ".MOV")):
+    print("Valid mp4 file")
+    #destinationPath = GetExifData(currentFile)
+    return -1
+  #elif filePath.endswith((".jpg",".JPG",".jpeg")):
+  #elif filePath.endswith((".jpg",".JPG",".jpeg")):
   else:
     print("Invalid image type")
     return -1
@@ -174,10 +192,10 @@ def MoveImages(listOfImages):
         newImageName = IncrementImageName(image, i)
         existingImagePath = pwd + "/" + existingImageDirectory + "/" + newImageName
         i += 1
-      os.rename(sourcePath, existingImagePath)
+      #os.rename(sourcePath, existingImagePath)
     else:
       print("bruh")
-      os.rename(sourcePath, destinationPath)
+      #os.rename(sourcePath, destinationPath)
 
 def main():
   CreateDirectories()
