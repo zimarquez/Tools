@@ -8,9 +8,8 @@ from datetime import datetime
 
 pwd = os.path.dirname(os.path.realpath(__file__))
 currentYear = datetime.now().year
-months = ["01-January","02-February","03-March","04-April",
-          "05-May","06-June","07-July","08-August",
-          "09-September","10-October","11-November","12-December"]
+months = ["01-January","02-February","03-March","04-April","05-May","06-June","07-July",
+          "08-August", "09-September","10-October","11-November","12-December"]
 fileTypes = (".jpg",".jpeg",".png",".mp4",".JPG",".MOV")
 badFormatDirectory = "Unsupported Format"
 existingFileDirectory = "Copies"
@@ -55,16 +54,16 @@ def CreateDirectories():
   # This line should work, but it doesn't.....
   #os.chmod(str(pwd) + "/" + str(year), 0o666)
 
-def GetNewImages():
+def GetNewFile():
   print("~~Making image list~~")
 
-  listOfFiles = os.listdir(pwd)
-  listOfImages = []
-  for f in listOfFiles:
+  listOfAllFiles = os.listdir(pwd)
+  listOfFiles = []
+  for f in listOfAllFiles:
     if f.endswith(fileTypes):
-      listOfImages.append(f)
+      listOfFiles.append(f)
     
-  return listOfImages
+  return listOfFiles
 
 def IncrementFileName(fileName, number):
   newFileName = ""
