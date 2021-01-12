@@ -13,7 +13,7 @@ months = ["01-January","02-February","03-March","04-April",
           "09-September","10-October","11-November","12-December"]
 fileTypes = (".jpg",".jpeg",".png",".mp4",".JPG",".MOV")
 badFormatDirectory = "Unsupported Format"
-existingImageDirectory = "Copies"
+existingFileDirectory = "Copies"
 unknownDateDirectory = "Unknown Date"
 dateTimeOriginalID = 36867
 
@@ -39,11 +39,11 @@ def CreateDirectories():
     os.makedirs(badFormatDirectory)
 
   # Create directory for exisiting images
-  if os.path.isdir(existingImageDirectory):
-    print("Directory " + existingImageDirectory + " already exists")
+  if os.path.isdir(existingFileDirectory):
+    print("Directory " + existingFileDirectory + " already exists")
   else:
-    print("Creating directory " + existingImageDirectory)
-    os.makedirs(existingImageDirectory)
+    print("Creating directory " + existingFileDirectory)
+    os.makedirs(existingFileDirectory)
 
   # Create directory for files needing manual organization
   if os.path.isdir(unknownDateDirectory):
@@ -66,68 +66,62 @@ def GetNewImages():
     
   return listOfImages
 
-def IncrementImageName(image, number):
-  newImageName = ""
-  for x in image:
+def IncrementFileName(fileName, number):
+  newFileName = ""
+  for x in fileName:
     if x == '.':
-      newImageName = newImageName + "(" + str(number) + ")"
-    newImageName = newImageName + x
+      newFileName = newFileName + "_COPY_(" + str(number) + ")"
+    newFileName = newFileName + x
   
-  return newImageName
+  return newFileName
 
-# extracts file origin date from exif data
-def GetJPGDate(imageName):
-  imagePath = pwd + "/" + imageName
-  image = Image.open(imagePath)
-  if image._getexif() != None:
-    for dataID, dataValue in image._getexif().items():
-      #print(TAGS[dataValue])
-      if dataID == dateTimeOriginalID:
-        print(dataValue)
-        year = dataValue[0:4]
-        month = dataValue[5:7]
-        day = dataValue[8:10]
-        destination = ("/" + str(year) + "/" + months[int(month)-1])
-        return destination
-  else:
-    print("The file: " + imagePath + " does not contain exif data")
+def GetOldestDate(createDate, modifyDate): 
+  if createDate == None:
+    return modifyDate
+  elif modifyDate == None:
     return -1
+  elif createDate[0:4] == modifyDate[0:4]:
+    if createDate[5:7] > modifyDate[5:7]:
+      return modifyDate
+    else:
+      return createDate
+  elif createDate[0:4] > modifyDate[0:4]:
+    return modifyDate
+  else:
+    return createDate
 
-def GetMP4Date(fileName):
-  print("Foo")
-  
 # FileModifyDate
 # CreateDate
 def GetExifData(fileName):
   sourcePath = pwd + "/" + fileName
-  tag = "CreateDate"
+  createDateTag = "CreateDate"
+  fileModifyDateTag = "FileModifyDate"
+
   with exiftool.ExifTool() as et:
-    #metadata = et.execute("-time:all " + str(sourcePath))
-    metadata = et.get_metadata(sourcePath)
-    specificTag = et.get_tag(tag, sourcePath)
-  print(tag + ": " + specificTag)
+    createDate = et.get_tag(createDateTag, sourcePath)
+    fileModifyDate = et.get_tag(fileModifyDateTag, sourcePath)
+    oldestDate = GetOldestDate(createDate, fileModifyDate)
+
+    year = oldestDate[0:4]
+    month = oldestDate[5:7]
+    day = oldestDate[8:10]
+    #print("Year: " + year)
+    #print("Month: " + month)
+    #print("Day: " + day)
+    destination = ("/" + str(year) + "/" + months[int(month)-1])
+  
+  return destination
 
 def GetDateFromFileData(currentFile):
-  filePath = pwd + "/" + currentFile
-  if filePath.endswith((".jpg",".JPG",".jpeg")):
-    print("Valid jpg file")
-    destinationPath = GetJPGDate(currentFile)
-  elif filePath.endswith((".mp4", ".MOV")):
-    print("Valid mp4 file")
-    #destinationPath = GetExifData(currentFile)
-    return -1
-  #elif filePath.endswith((".jpg",".JPG",".jpeg")):
-  #elif filePath.endswith((".jpg",".JPG",".jpeg")):
-  else:
-    print("Invalid image type")
-    return -1
-  
+  print("Getting path from exif")
+  destinationPath = GetExifData(currentFile)
   return destinationPath
 
 def GetDateFromFileName(imageName):
   print("~~Getting destination directory~~")
 
-  print("Using image: " + imageName) 
+  print("Using image: " + imageName)
+  # yyyymmdd
   date = re.search("\d\d\d\d\d\d\d\d", imageName)
   if date:
     date = date.group()
@@ -137,7 +131,7 @@ def GetDateFromFileName(imageName):
     print(int(month))
     destination = ("/" + str(year) + "/" + months[int(month)-1])
     return destination
-
+  # yyyy-mm-dd
   date = re.search("\d\d\d\d-\d\d-\d\d", imageName)
   if date:
     date = date.group()
@@ -157,49 +151,44 @@ def GetDateFromFileName(imageName):
   return destination
 
   
-def MoveImages(listOfImages):
+def MoveFiles(listOfFiles):
   print("~~Moving images~~")
   
-  for image in listOfImages:
-    sourcePath = pwd + "/" + image
+  for fileName in listOfFiles:
 
     # Extract date from file name
-    dateDirectory = GetDateFromFileName(image)
+    dateDirectory = GetDateFromFileName(fileName)
     if dateDirectory != -1:
-      destinationPath = pwd + dateDirectory + "/" + image
+      destinationPath = pwd + dateDirectory + "/" + fileName
     # Extract date from file data
     else:
-      print("It's sorta working :D")
-      dateDirectory = GetDateFromFileData(image)
+      dateDirectory = GetDateFromFileData(fileName)
       if dateDirectory == -1:
-        print("The file '" + image + "' could not be organized. Moving to '" + unknownDateDirectory + "' directory")
+        print("The file '" + fileName + "' could not be organized. Moving to '" + unknownDateDirectory + "' directory")
         dateDirectory = "/" + unknownDateDirectory
-      destinationPath = pwd + dateDirectory + "/" + image
+      destinationPath = pwd + dateDirectory + "/" + fileName
     
-    badFormatPath = pwd + "/" + badFormatDirectory + "/" + image
-    existingImagePath = pwd + "/" + existingImageDirectory + "/" + image
-    
-    #print("Old: ", sourcePath)
-    #print("New: ", destinationPath)
+    badFormatPath = pwd + "/" + badFormatDirectory + "/" + fileName
+    existingFilePath = pwd + "/" + existingFileDirectory + "/" + fileName
 
     if destinationPath == badFormatPath:
-      print("WARNING: the file '" + image + "' is not in a valid name format. Moving to 'Unsupported' directory")
+      print("WARNING: the file '" + fileName + "' is not in a valid name format. Moving to 'Unsupported' directory")
       #os.rename(sourcePath, badFormatPath)
     elif os.path.exists(destinationPath):
-      print("WARNING: the file '" + image + "' already exists in " + str(destinationPath) + ". Moving to Copies directory.")
+      print("WARNING: the file '" + fileName + "' already exists in " + str(destinationPath) + ". Moving to Copies directory.")
       i = 1
-      while os.path.exists(existingImagePath):
-        newImageName = IncrementImageName(image, i)
-        existingImagePath = pwd + "/" + existingImageDirectory + "/" + newImageName
+      while os.path.exists(existingFilePath):
+        newFileName = IncrementFileName(fileName, i)
+        existingFilePath = pwd + "/" + existingFileDirectory + "/" + newFileName
         i += 1
-      #os.rename(sourcePath, existingImagePath)
+      #os.rename(sourcePath, existingFilePath)
     else:
       print("bruh")
       #os.rename(sourcePath, destinationPath)
 
 def main():
   CreateDirectories()
-  MoveImages(GetNewImages())
+  MoveFiles(GetNewImages())
 
 if __name__ == "__main__":
   main()
