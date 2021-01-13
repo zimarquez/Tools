@@ -11,52 +11,38 @@ currentYear = datetime.now().year
 months = ["01-January","02-February","03-March","04-April","05-May","06-June","07-July",
           "08-August", "09-September","10-October","11-November","12-December"]
 fileTypes = (".jpg",".jpeg",".png",".mp4",".JPG",".MOV")
-badFormatDirectory = "Unsupported Format"
+unknownFormatDirectory = "Unsupported Format"
 existingFileDirectory = "Copies"
 unknownDateDirectory = "Unknown Date"
-dateTimeOriginalID = 36867
 
 def CreateDirectories():
   print("~~Checking year directories~~")
 
   # Create year directories
   for year in range (2000, currentYear+1):
-    if os.path.isdir(str(year)):
-      i = 0
-      #print("Directory " + str(year) + " already exists")
-    else:
+    if not os.path.isdir(str(year)):
       print("Creating directory " + str(year))
       os.makedirs(str(year))
       for month in months:
         os.makedirs(str(year) + "/" + month)
 
   # Create directory for unsupported file formats
-  if os.path.isdir(badFormatDirectory):
-    print("Directory " + badFormatDirectory + " already exists")
-  else:
-    print("Creating directory " + badFormatDirectory)
-    os.makedirs(badFormatDirectory)
+  if not os.path.isdir(unknownFormatDirectory):
+    print("Creating directory " + unknownFormatDirectory)
+    os.makedirs(unknownFormatDirectory)
 
   # Create directory for exisiting images
-  if os.path.isdir(existingFileDirectory):
-    print("Directory " + existingFileDirectory + " already exists")
-  else:
+  if not os.path.isdir(existingFileDirectory):
     print("Creating directory " + existingFileDirectory)
     os.makedirs(existingFileDirectory)
 
   # Create directory for files needing manual organization
-  if os.path.isdir(unknownDateDirectory):
-    print("Directory " + unknownDateDirectory + " already exists")
-  else:
+  if not os.path.isdir(unknownDateDirectory):
     print("Creating directory " + unknownDateDirectory)
     os.makedirs(unknownDateDirectory)
 
-  # This line should work, but it doesn't.....
-  #os.chmod(str(pwd) + "/" + str(year), 0o666)
-
-def GetNewFile():
-  print("~~Making image list~~")
-
+def GetNewFiles():
+  print("~~Making file list~~")
   listOfAllFiles = os.listdir(pwd)
   listOfFiles = []
   for f in listOfAllFiles:
@@ -67,10 +53,10 @@ def GetNewFile():
 
 def IncrementFileName(fileName, number):
   newFileName = ""
-  for x in fileName:
-    if x == '.':
+  for character in fileName:
+    if character == '.':
       newFileName = newFileName + "_COPY_(" + str(number) + ")"
-    newFileName = newFileName + x
+    newFileName = newFileName + character
   
   return newFileName
 
@@ -89,10 +75,10 @@ def GetOldestDate(createDate, modifyDate):
   else:
     return createDate
 
-# FileModifyDate
-# CreateDate
-def GetExifData(fileName):
-  sourcePath = pwd + "/" + fileName
+def GetDateFromFileData(currentFile):
+  print("Getting path from exif")
+  sourcePath = pwd + "/" + currentFile
+  destinationPath = -1
   createDateTag = "CreateDate"
   fileModifyDateTag = "FileModifyDate"
 
@@ -107,13 +93,8 @@ def GetExifData(fileName):
     #print("Year: " + year)
     #print("Month: " + month)
     #print("Day: " + day)
-    destination = ("/" + str(year) + "/" + months[int(month)-1])
-  
-  return destination
+    destinationPath = (str(year) + "/" + months[int(month)-1])
 
-def GetDateFromFileData(currentFile):
-  print("Getting path from exif")
-  destinationPath = GetExifData(currentFile)
   return destinationPath
 
 def GetDateFromFileName(imageName):
@@ -128,7 +109,7 @@ def GetDateFromFileName(imageName):
     month = date[4:6]
     day = date[6:8]
     print(int(month))
-    destination = ("/" + str(year) + "/" + months[int(month)-1])
+    destination = (str(year) + "/" + months[int(month)-1])
     return destination
   # yyyy-mm-dd
   date = re.search("\d\d\d\d-\d\d-\d\d", imageName)
@@ -137,13 +118,12 @@ def GetDateFromFileName(imageName):
     year = date[0:4]
     month = date[5:7]
     day = date[8:10]
-    destination = ("/" + str(year) + "/" + months[int(month)-1])
+    destination = (str(year) + "/" + months[int(month)-1])
     return destination
 
   # Move files with unsupported format to separate directory
   else:
-    #GetDateFromExif(imageName)
-    destination = ("/" + badFormatDirectory)
+    destination = unknownFormatDirectory
     print("WARNING: No valid date found")
     return -1
 
@@ -157,22 +137,20 @@ def MoveFiles(listOfFiles):
 
     # Extract date from file name
     dateDirectory = GetDateFromFileName(fileName)
-    if dateDirectory != -1:
-      destinationPath = pwd + dateDirectory + "/" + fileName
     # Extract date from file data
-    else:
+    if dateDirectory == -1:
       dateDirectory = GetDateFromFileData(fileName)
       if dateDirectory == -1:
         print("The file '" + fileName + "' could not be organized. Moving to '" + unknownDateDirectory + "' directory")
-        dateDirectory = "/" + unknownDateDirectory
-      destinationPath = pwd + dateDirectory + "/" + fileName
+        dateDirectory = unknownDateDirectory
     
-    badFormatPath = pwd + "/" + badFormatDirectory + "/" + fileName
+    destinationPath = pwd + "/" + dateDirectory + "/" + fileName
+    unknownFormatPath = pwd + "/" + unknownFormatDirectory + "/" + fileName
     existingFilePath = pwd + "/" + existingFileDirectory + "/" + fileName
 
-    if destinationPath == badFormatPath:
-      print("WARNING: the file '" + fileName + "' is not in a valid name format. Moving to 'Unsupported' directory")
-      #os.rename(sourcePath, badFormatPath)
+    if destinationPath == unknownFormatDirectory:
+      print("WARNING: the file '" + fileName + "' is not in a valid name format. Moving to '" + unknownFormatDirectory + "' directory")
+      #os.rename(sourcePath, unknownFormatPath)
     elif os.path.exists(destinationPath):
       print("WARNING: the file '" + fileName + "' already exists in " + str(destinationPath) + ". Moving to Copies directory.")
       i = 1
@@ -187,7 +165,7 @@ def MoveFiles(listOfFiles):
 
 def main():
   CreateDirectories()
-  MoveFiles(GetNewImages())
+  MoveFiles(GetNewFiles())
 
 if __name__ == "__main__":
   main()
