@@ -10,8 +10,7 @@ pwd = os.path.dirname(os.path.realpath(__file__))
 currentYear = datetime.now().year
 months = ["01-January","02-February","03-March","04-April","05-May","06-June","07-July",
           "08-August", "09-September","10-October","11-November","12-December"]
-fileTypes = (".jpg",".jpeg",".png",".mp4",".JPG",".MOV")
-unknownFormatDirectory = "Unsupported Format"
+fileTypes = (".jpg",".jpeg",".png",".mp4",".JPG",".MOV",".MPG")
 existingFileDirectory = "Copies"
 unknownDateDirectory = "Unknown Date"
 
@@ -25,11 +24,6 @@ def CreateDirectories():
       os.makedirs(str(year))
       for month in months:
         os.makedirs(str(year) + "/" + month)
-
-  # Create directory for unsupported file formats
-  if not os.path.isdir(unknownFormatDirectory):
-    print("Creating directory " + unknownFormatDirectory)
-    os.makedirs(unknownFormatDirectory)
 
   # Create directory for exisiting images
   if not os.path.isdir(existingFileDirectory):
@@ -76,7 +70,7 @@ def GetOldestDate(createDate, modifyDate):
     return createDate
 
 def GetDateFromFileData(currentFile):
-  print("Getting path from exif")
+  print("Checking file data for date...")
   sourcePath = pwd + "/" + currentFile
   destinationPath = -1
   createDateTag = "CreateDate"
@@ -90,19 +84,17 @@ def GetDateFromFileData(currentFile):
     year = oldestDate[0:4]
     month = oldestDate[5:7]
     day = oldestDate[8:10]
-    #print("Year: " + year)
-    #print("Month: " + month)
-    #print("Day: " + day)
+    print("Year: " + year)
+    print("Month: " + month)
+    print("Day: " + day)
     destinationPath = (str(year) + "/" + months[int(month)-1])
 
   return destinationPath
 
-def GetDateFromFileName(imageName):
-  print("~~Getting destination directory~~")
-
-  print("Using image: " + imageName)
+def GetDateFromFileName(fileName):
+  print("Checking file name for date...")
   # yyyymmdd
-  date = re.search("\d\d\d\d\d\d\d\d", imageName)
+  date = re.search("\d\d\d\d\d\d\d\d", fileName)
   if date:
     date = date.group()
     year = date[0:4]
@@ -111,8 +103,9 @@ def GetDateFromFileName(imageName):
     print(int(month))
     destination = (str(year) + "/" + months[int(month)-1])
     return destination
+
   # yyyy-mm-dd
-  date = re.search("\d\d\d\d-\d\d-\d\d", imageName)
+  date = re.search("\d\d\d\d-\d\d-\d\d", fileName)
   if date:
     date = date.group()
     year = date[0:4]
@@ -122,36 +115,27 @@ def GetDateFromFileName(imageName):
     return destination
 
   # Move files with unsupported format to separate directory
-  else:
-    destination = unknownFormatDirectory
-    print("WARNING: No valid date found")
-    return -1
-
-  return destination
-
+  print("No date found in file name")
+  return -1
   
 def MoveFiles(listOfFiles):
   print("~~Moving images~~")
   
   for fileName in listOfFiles:
-
+    print("Using image: " + fileName)
     # Extract date from file name
     dateDirectory = GetDateFromFileName(fileName)
     # Extract date from file data
     if dateDirectory == -1:
       dateDirectory = GetDateFromFileData(fileName)
       if dateDirectory == -1:
-        print("The file '" + fileName + "' could not be organized. Moving to '" + unknownDateDirectory + "' directory")
+        print("WARNING: no date found for '" + fileName + "' Moving to '" + unknownDateDirectory + "' directory")
         dateDirectory = unknownDateDirectory
     
     destinationPath = pwd + "/" + dateDirectory + "/" + fileName
-    unknownFormatPath = pwd + "/" + unknownFormatDirectory + "/" + fileName
     existingFilePath = pwd + "/" + existingFileDirectory + "/" + fileName
 
-    if destinationPath == unknownFormatDirectory:
-      print("WARNING: the file '" + fileName + "' is not in a valid name format. Moving to '" + unknownFormatDirectory + "' directory")
-      #os.rename(sourcePath, unknownFormatPath)
-    elif os.path.exists(destinationPath):
+    if os.path.exists(destinationPath):
       print("WARNING: the file '" + fileName + "' already exists in " + str(destinationPath) + ". Moving to Copies directory.")
       i = 1
       while os.path.exists(existingFilePath):
@@ -160,7 +144,7 @@ def MoveFiles(listOfFiles):
         i += 1
       #os.rename(sourcePath, existingFilePath)
     else:
-      print("bruh")
+      print("Moving file: '" + fileName + "' to '" + dateDirectory)
       #os.rename(sourcePath, destinationPath)
 
 def main():
