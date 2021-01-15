@@ -16,6 +16,11 @@ Supported file types:
 - avi
 - wmv
 
+Known Name Date Formats:
+yyy-mm-dd
+yyymmdd
+
+
 Current Features:
 - Create year and month directories from year 2000 to current year
 - Create directory for storing copies of exisiting files

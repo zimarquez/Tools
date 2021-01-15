@@ -7,7 +7,8 @@ from pathlib import Path
 from datetime import datetime
 
 pwd = os.path.dirname(os.path.realpath(__file__))
-currentYear = datetime.now().year
+oldestYear = 1970
+currentYear = datetime.now().year + 1
 months = ["01-January","02-February","03-March","04-April","05-May","06-June","07-July",
           "08-August", "09-September","10-October","11-November","12-December"]
 fileTypes = (".jpg",".jpeg",".png",".mp4",".JPG",".MOV",".MPG")
@@ -18,7 +19,7 @@ def CreateDirectories():
   print("~~Checking year directories~~")
 
   # Create year directories
-  for year in range (2000, currentYear+1):
+  for year in range (2000, currentYear):
     if not os.path.isdir(str(year)):
       print("Creating directory " + str(year))
       os.makedirs(str(year))
@@ -69,6 +70,22 @@ def GetOldestDate(createDate, modifyDate):
   else:
     return createDate
 
+# returns -1 if the date pulled from file name is not valid
+def VerifyDate(year, month):
+  if year < oldestYear or year > currentYear:
+    print("Warning: " + year + "is not in the expected year range of " + oldestYear + "-" + currentYear)
+    return -1
+
+  if month == "XX":
+    return 1
+
+  if month < 1 or month > 12:
+    print("Warning: " + month + " is not a valid month number")
+    return -1
+  
+  return 0
+
+
 def GetDateFromFileData(currentFile):
   print("Checking file data for date...")
   sourcePath = pwd + "/" + currentFile
@@ -100,8 +117,14 @@ def GetDateFromFileName(fileName):
     year = date[0:4]
     month = date[4:6]
     day = date[6:8]
-    print(int(month))
-    destination = (str(year) + "/" + months[int(month)-1])
+
+    validDate = VerifyDate(year, month)
+    if validDate == 1:
+      destination = (str(year) + "/")
+    elif validDate == 0:
+      destination = (str(year) + "/" + months[int(month)-1])
+    else:
+      destination = -1
     return destination
 
   # yyyy-mm-dd
@@ -111,7 +134,14 @@ def GetDateFromFileName(fileName):
     year = date[0:4]
     month = date[5:7]
     day = date[8:10]
-    destination = (str(year) + "/" + months[int(month)-1])
+    
+    validDate = VerifyDate(year, month)
+    if validDate == 1:
+      destination = (str(year) + "/")
+    elif validDate == 0:
+      destination = (str(year) + "/" + months[int(month)-1])
+    else:
+      destination = -1
     return destination
 
   # Move files with unsupported format to separate directory
