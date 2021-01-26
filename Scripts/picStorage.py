@@ -7,7 +7,7 @@ from pathlib import Path
 from datetime import datetime
 
 pwd = os.path.dirname(os.path.realpath(__file__))
-oldestYear = 1970
+oldestYear = 1960
 currentYear = datetime.now().year + 1
 months = ["01-January","02-February","03-March","04-April","05-May","06-June","07-July",
           "08-August", "09-September","10-October","11-November","12-December"]
@@ -16,16 +16,6 @@ existingFileDirectory = "Copies"
 unknownDateDirectory = "Unknown Date"
 
 def CreateDirectories():
-  print("~~Checking year directories~~")
-
-  # Create year directories
-  for year in range (2000, currentYear):
-    if not os.path.isdir(str(year)):
-      print("Creating directory " + str(year))
-      os.makedirs(str(year))
-      for month in months:
-        os.makedirs(str(year) + "/" + month)
-
   # Create directory for exisiting images
   if not os.path.isdir(existingFileDirectory):
     print("Creating directory " + existingFileDirectory)
@@ -35,6 +25,16 @@ def CreateDirectories():
   if not os.path.isdir(unknownDateDirectory):
     print("Creating directory " + unknownDateDirectory)
     os.makedirs(unknownDateDirectory)
+
+def CreateDirectory(date):
+  print("Creating '" + date + "' directory")
+  year = date[0:4]
+  month = date[5:]
+  if not os.path.isdir(year):
+    os.makedirs(year)
+  
+  os.makedirs(year + "/" + month)
+
 
 def GetNewFiles():
   print("~~Making file list~~")
@@ -72,14 +72,14 @@ def GetOldestDate(createDate, modifyDate):
 
 # returns -1 if the date pulled from file name is not valid
 def VerifyDate(year, month):
-  if year < oldestYear or year > currentYear:
-    print("Warning: " + year + "is not in the expected year range of " + oldestYear + "-" + currentYear)
+  if int(year) < oldestYear or int(year) > currentYear:
+    print("Warning: " + year + " is not in the expected year range of " + str(oldestYear) + "-" + str(currentYear))
     return -1
 
   if month == "XX":
     return 1
 
-  if month < 1 or month > 12:
+  if int(month) < 1 or int(month) > 12:
     print("Warning: " + month + " is not a valid month number")
     return -1
   
@@ -137,7 +137,7 @@ def GetDateFromFileName(fileName):
     
     validDate = VerifyDate(year, month)
     if validDate == 1:
-      destination = (str(year) + "/")
+      destination = str(year)
     elif validDate == 0:
       destination = (str(year) + "/" + months[int(month)-1])
     else:
@@ -164,7 +164,11 @@ def MoveFiles(listOfFiles):
     
     destinationPath = pwd + "/" + dateDirectory + "/" + fileName
     existingFilePath = pwd + "/" + existingFileDirectory + "/" + fileName
+    destinationDirectory = pwd + "/" + dateDirectory
 
+    if not os.path.exists(destinationDirectory):
+      CreateDirectory(dateDirectory)
+    
     if os.path.exists(destinationPath):
       print("WARNING: the file '" + fileName + "' already exists in " + str(destinationPath) + ". Moving to Copies directory.")
       i = 1
@@ -178,7 +182,7 @@ def MoveFiles(listOfFiles):
       #os.rename(sourcePath, destinationPath)
 
 def main():
-  CreateDirectories()
+  #CreateDirectories()
   MoveFiles(GetNewFiles())
 
 if __name__ == "__main__":
