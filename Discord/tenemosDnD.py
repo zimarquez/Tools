@@ -23,13 +23,22 @@ async def weeb(ctx):
 @client.command()
 async def r(ctx, arg):
     # WIP
-    #rollCommand = ''
-    #if '+' in arg:
-    #    rollCommand = arg.split("+",1)
-
+    rollModifier = 0
+    sum = 0
+    modifier = False
     rollCommand = arg.split("d", 1)
-    rollResults = []
-    index = 0
+    if '+' in arg:
+        rollModifier = arg.split("+",1)
+        print(str(rollModifier[0]) + '\t' + str(rollModifier[1]))
+        rollCommand = rollModifier[0].split("d", 1)
+        modifier = True
+        sum = int(rollModifier[1])
+
+    rollInstance = random.randint(1,int(rollCommand[1]))
+    rollResults = [rollInstance]
+    result = arg + ': ' + str(rollInstance)
+    sum += rollInstance
+    index = 1
     if int(rollCommand[0]) >= 10 or int(rollCommand[0]) <= 0:
         await ctx.send("no")
     else:
@@ -37,7 +46,18 @@ async def r(ctx, arg):
             rollInstance = random.randint(1,int(rollCommand[1]))
             rollResults.append(str(rollInstance))
             index += 1
-        await ctx.send(',  '.join(rollResults))
+            sum += rollInstance
+            result = result + ' + ' + str(rollInstance)
+        
+        if modifier:
+            if int(rollModifier[1]) < 0:
+                result = result + ' - ' + str(rollModifier[1])
+            elif int(rollModifier[1]) > 0:
+                result = result + ' + ' + str(rollModifier[1])
+        
+        result = result + ' = ' + str(sum)
+        print(result)
+        await ctx.send(result)#',  '.join(rollResults))
 
 # Run the bot
 client.run(TOKEN)
