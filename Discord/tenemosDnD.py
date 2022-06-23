@@ -4,7 +4,8 @@ from discord.ext import commands
 import random
 
 # Credentials
-TOKEN = ''
+f = open("token.txt", "r")
+TOKEN = f.read()
 
 # Create bot
 client = commands.Bot(command_prefix='/')
