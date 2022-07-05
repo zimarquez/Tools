@@ -2,6 +2,7 @@
 import discord
 from discord.ext import commands
 import random
+import re
 
 # Credentials
 f = open("token.txt", "r")
@@ -23,41 +24,44 @@ async def weeb(ctx):
 @client.command()
 async def r(ctx, arg):
     # WIP
-    rollModifier = 0
-    sum = 0
-    modifier = False
-    rollCommand = arg.split("d", 1)
-    if '+' in arg:
-        rollModifier = arg.split("+",1)
-        print(str(rollModifier[0]) + '\t' + str(rollModifier[1]))
-        rollCommand = rollModifier[0].split("d", 1)
-        modifier = True
-        sum = int(rollModifier[1])
-
-    rollInstance = random.randint(1,int(rollCommand[1]))
-    rollResults = [rollInstance]
-    result = arg + ': ' + str(rollInstance)
-    sum += rollInstance
-    index = 1
-    if int(rollCommand[0]) >= 10 or int(rollCommand[0]) <= 0:
+    print("Original arg: " + str(arg))
+    
+    # Get die roll amount
+    rollCommand = arg.split("d",1)
+    rollCount = int(rollCommand[0])
+    if rollCount >= 10 or rollCount <= 0:
         await ctx.send("no")
+    print("RollCount: " + str(rollCount))
+    
+    # Get die roll value and modifier sum
+    rollDie = 0
+    modifierSum = 0
+    if '+' or '-' in rollCommand[1]:
+        modifierSum = eval(rollCommand[1])
+        rollCommand = re.split('\+|\-',rollCommand[1])
+        rollDie = rollCommand[0]
+        modifierSum -= int(rollDie)
+        print(str(modifierSum))
+        print("RollDieA: " + str(rollDie))
     else:
-        while index < int(rollCommand[0]):
-            rollInstance = random.randint(1,int(rollCommand[1]))
-            rollResults.append(str(rollInstance))
-            index += 1
-            sum += rollInstance
-            result = result + ' + ' + str(rollInstance)
-        
-        if modifier:
-            if int(rollModifier[1]) < 0:
-                result = result + ' - ' + str(rollModifier[1])
-            elif int(rollModifier[1]) > 0:
-                result = result + ' + ' + str(rollModifier[1])
-        
-        result = result + ' = ' + str(sum)
-        print(result)
-        await ctx.send(result)#',  '.join(rollResults))
+        rollDie = rollCommand[1]
+        print("RollDieB: " + str(rollDie))
+    
+    # Get roll sum
+    rollSum = random.randint(1,int(rollDie))
+    result = arg + ':\n' + str(rollSum)
+    while rollCount > 1:
+        randomRoll = random.randint(1,int(rollDie))
+        result += ' + ' + str(randomRoll)
+        rollSum += randomRoll
+        rollCount -= 1
+    
+    # Get roll amount + modifiers
+    totalSum = rollSum + modifierSum
+    result += ' + modifiers ' + ' = ' + str(totalSum)
+    await ctx.send(result)
+
+    print("Done!")
 
 # Run the bot
 client.run(TOKEN)
